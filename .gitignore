@@ -63,6 +63,13 @@ instance/
 # Scrapy stuff:
 .scrapy
 
+# Dolphin stuff:
+.directory
+
+# vscode stuff:
+.vscode
+TODO
+
 # Sphinx documentation
 docs/_build/
 
