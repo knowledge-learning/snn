@@ -1,11 +1,41 @@
 from typing import List, Tuple, Dict
+import re
+from urllib.parse import unquote
 try:
     from .base_model import SNN, Dense
     from .utils import Relation, Entitie, tnorm_loss, bin_acc, Model
+    from .datainterface import DataInterface
+    from .mypymongo import PyMongo
 except ImportError:
     from base_model import SNN, Dense
     from utils import Relation, Entitie, tnorm_loss, bin_acc, Model
+    from datainterface import DataInterface
+    from mypymongo import PyMongo
 
+mongo = None
+db = None
+relations = None
+ents_props = None
+
+
+def init_mongo(uri=None):
+    global mongo
+    global db
+    global relations
+    global ents_props
+    if uri is None:
+        mongo = PyMongo('mongodb://localhost:27017/dbpedia')
+    else:
+        mongo = PyMongo(uri)
+    db = mongo.db
+    relations = db['Relations']
+    ents_props = db['EntitiesProperties']
+
+init_mongo()
+
+
+class dbpediaIF(DataInterface):
+    pass
 
 class dbpediaSNN(SNN):
     def __init__(self, entities: List[str],
@@ -29,6 +59,3 @@ class dbpediaSNN(SNN):
         model.compile(optimizer='RMSprop',
                         loss=tnorm_loss, metrics=[bin_acc])
         return model
-
-    def pretrain(self):
-        pass

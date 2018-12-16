@@ -1,1 +1,1 @@
-from .dbpedia import dbpediaISN
+from .dbpedia import dbpediaSNN

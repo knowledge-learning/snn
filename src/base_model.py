@@ -10,7 +10,7 @@ from keras.layers import Lambda, Maximum, Dense, Concatenate
 class SNN(metaclass=abc.ABCMeta):
 
     def __init__(self, entities: List[str],
-        relations: Dict[str, List[Tuple[str]]], isar: List[Tuple[str]]):
+                 relations: Dict[str, List[Tuple[str]]], isar: List[Tuple[str]]):
         """ redes semanticas
         entities: lista de strings
         relations: diccionario de: llave relacion, valor lista de tuplas de
@@ -23,7 +23,7 @@ class SNN(metaclass=abc.ABCMeta):
         """
         eet = set(entities)
         # check for duplicate entities
-        assert len(eet) == len(entities)
+        assert len(eet) == len(entities), "Exist duplicated entities"
         # avoid overhead of acces class attribute
         for rel_name, ents in relations.items():
             for ents_pair in ents:
@@ -42,7 +42,6 @@ class SNN(metaclass=abc.ABCMeta):
         self.isar = isar
         self.entities = list(sorted(entities))
         self.node_prior = self._make_proc_ord(isar)
-        self.partial_model_cache = None
 
     def _make_proc_ord(self, isar):
         """ Las relaciones isa forman una foresta, por lo que
@@ -57,6 +56,7 @@ class SNN(metaclass=abc.ABCMeta):
         w = {}
         if not isar:
             self.porcord = []
+            return w
 
         for child, parent in isar:
             if not(child in w):
@@ -78,7 +78,7 @@ class SNN(metaclass=abc.ABCMeta):
                 procord.append([set([child]), parent, w[parent]])
                 parents[parent] = [set([child]), len(procord)-1]
         self.porcord = list(map(lambda y: (tuple(y[0]), y[1]),
-                        sorted(procord, key=lambda x: x[-1])))
+                                sorted(procord, key=lambda x: x[-1])))
         return w
 
     def _update_priority(self, procord, nval, p, w):
@@ -107,7 +107,7 @@ class SNN(metaclass=abc.ABCMeta):
         tt = self.ents
         procord = self.porcord
         if not procord:
-            return []
+            return
         # chs = set()
         for childs, parent in procord:
             # chs.update(childs)
@@ -125,8 +125,10 @@ class SNN(metaclass=abc.ABCMeta):
         # np = sents.difference_update(chs)
         # return [tt[i] for i in np]
 
-    def __call__(self, inputt, train=False, compilee=False):
-
+    def _build_model(self, inputt):
+        """ Genera el mode, es decir, se crean los nodos entidad
+            y los nodos relacion y se conectan
+        """
         self.ents = {}
         ents = self.ents
         self._make_isa_layers(inputt)
@@ -136,17 +138,22 @@ class SNN(metaclass=abc.ABCMeta):
         for i in self.entities:
             if not(i in ents):
                 ents[i] = self.entitie_capsule(i, inputt)
+                self.node_prior[i] = 0
         self.rels = {}
         rels = self.rels
         for rel, ents_p in self.relations.items():
             if len(ents_p) == 1:
                 e1, e2 = ents_p[0]
                 rels[rel] = self.relation_capsule(
-                    rel, [self.ents[e1], self.ents[e2]])
+                    rel, [ents[e1], ents[e2]])
             for n, (e1, e2) in enumerate(ents_p):
                 rels[rel+str(n)] = self.relation_capsule(
-                    rel+'_'+str(n), [self.ents[e1], self.ents[e2]])
+                    rel+'_'+str(n), [ents[e1], ents[e2]])
 
+    def __call__(self, inputt, train=False, compilee=False):
+        self._build_model(inputt)
+        ents = self.ents
+        rels = self.rels
         if train:
             out = []
             for i in self.entities:
@@ -157,13 +164,16 @@ class SNN(metaclass=abc.ABCMeta):
                                   output_shape=tnorm_output_shape, name=i+'-out')(rels[i]))
             outt = Concatenate(name='out_embeding')(out)
             if compilee:
-                return self._compile(inputt, outt)
+                return self.wrap_compile(inputt, outt)
             return outt
-        outt = Concatenate(name='out_embeding')([ents[i] for i in self.entities]+
+        outt = Concatenate(name='out_embeding')([ents[i] for i in self.entities] +
                                                 [rels[j] for j in sorted(rels.keys())])
         if compilee:
             return self.wrap_compile(inputt, outt)
         return outt
+
+    def pretrain(self):
+        pass
 
     @isModel
     def wrap_compile(self, inn, outt):
@@ -171,10 +181,6 @@ class SNN(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def _compile(self, inn, outt):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def pretrain(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
