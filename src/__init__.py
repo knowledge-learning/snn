@@ -1,1 +1,1 @@
-from .dbpedia import dbpediaSNN
+from .dbpedia import dbpediaSNN, dbpediaIF

@@ -40,7 +40,7 @@ class SNN(metaclass=abc.ABCMeta):
             assert ents_pair[0] in eet
             assert ents_pair[1] in eet
         self.isar = isar
-        self.entities = list(sorted(entities))
+        self.entities = tuple(sorted(entities))
         self.node_prior = self._make_proc_ord(isar)
 
     def _make_proc_ord(self, isar):
