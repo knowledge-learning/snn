@@ -60,9 +60,9 @@ def tnorm_output_shape(input_shape):
 
 
 def tnorm_loss(y_true, y_pred):
-    fp = (1-K.exp(-y_pred))/0.6321205588285577
-    fp1 = (1-K.exp(K.abs(y_pred-1)))/0.6321205588285577
-    return y_true*fp1+(1-y_true)*fp
+    fp = (1-K.exp(-K.square(y_pred)))/0.6321205588285577
+    fp1 = (1-K.exp(-K.square(y_pred-1)))/0.6321205588285577
+    return K.mean(y_true*fp1+(1-y_true)*fp, axis=-1)
 
 
 # esto solo aporta claridad a los diagramas de las redes ya que todo queda encapsulado

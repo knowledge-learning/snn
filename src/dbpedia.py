@@ -124,7 +124,7 @@ class dbpediaSNN(SNN):
      relations: Dict[str, List[Tuple[str]]], isar: List[Tuple[str]]):
         super(dbpediaSNN, self).__init__(entities, relations, isar)
         self.ent_units = 12
-        self.rel_unit = 24
+        self.rel_units = 24
         self.isa_units = 12
 
     def entitie_capsule(self, name: str, inputt):\

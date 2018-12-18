@@ -146,6 +146,7 @@ class SNN(metaclass=abc.ABCMeta):
                 e1, e2 = ents_p[0]
                 rels[rel] = self.relation_capsule(
                     rel, [ents[e1], ents[e2]])
+                continue
             for n, (e1, e2) in enumerate(ents_p):
                 rels[rel+str(n)] = self.relation_capsule(
                     rel+'_'+str(n), [ents[e1], ents[e2]])
