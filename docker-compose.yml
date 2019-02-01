@@ -1,0 +1,12 @@
+version: "2.3"
+
+services:
+  ml:
+    image: matcomuh/ml:cpu
+    volumes:
+      - ./:/ml
+    ports:
+      - '8888:8888'
+    container_name: ml
+    command: ["jupyter", "lab", "--allow-root", "--NotebookApp.password=", "--NotebookApp.token=", "--ip=0.0.0.0"]
+    working_dir: "/ml"

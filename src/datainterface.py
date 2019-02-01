@@ -12,12 +12,12 @@ class DataInterface(metaclass=abc.ABCMeta):
             assert isinstance(entities, list)
         except AssertionError:
             assert isinstance(
-                entities, tuple), f"Expected list or tuple, but is {type(entities)}"
+                entities, tuple), "Expected list or tuple, but is {type(entities)}"
         try:
             assert isinstance(relations, list)
         except AssertionError:
             assert isinstance(
-                relations, tuple), f"Expected list or tuple, but is {type(relations)}"
+                relations, tuple), "Expected list or tuple, but is {type(relations)}"
         self.ents = tuple(sorted(entities))
         self.rels = tuple(sorted(relations))
         self.vect = CountVectorizer(vocabulary=self.build_vocab(), binary=True)

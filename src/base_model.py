@@ -1,9 +1,12 @@
 import abc
 from typing import List, Tuple, Dict
-try:
-    from .utils import tnorm, tnorm_output_shape, isLayer, isModel
-except ImportError:
-    from utils import tnorm, tnorm_output_shape, isLayer, isModel
+
+# try:
+#     from .utils import tnorm, tnorm_output_shape, isLayer, isModel
+# except ImportError:
+#     from utils import tnorm, tnorm_output_shape, isLayer, isModel
+from utils import tnorm, tnorm_output_shape, isLayer, isModel
+
 from keras.layers import Lambda, Maximum, Dense, Concatenate
 
 

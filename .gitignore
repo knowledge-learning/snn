@@ -112,3 +112,4 @@ venv.bak/
 
 # temporal ignore upto test are move to unittest estyle
 tests
+data
