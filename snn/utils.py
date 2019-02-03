@@ -69,12 +69,12 @@ def tnorm_loss(y_true, y_pred):
 # como una clase de keras y se ve como un nodo en el grafo, no es m\'as que una capa
 # densa por cada entidad(2 entidades) y otra capa densa mas grande conectada al concat
 # de las capas antes mencionadas
-class Relation(Layer):
+class RelationLayer(Layer):
     @legacy_entitie_support
     def __init__(self, units, **kwargs):
         if 'input_shape' not in kwargs and 'input_dim' in kwargs:
             kwargs['input_shape'] = (kwargs.pop('input_dim'),)
-        super(Relation, self).__init__(**kwargs)
+        super(RelationLayer, self).__init__(**kwargs)
         self.input_spec = InputSpec(min_ndim=2)
         self.units = units
         self.supports_masking = True
@@ -183,19 +183,19 @@ class Relation(Layer):
         config = {
             'units': self.units
         }
-        base_config = super(Relation, self).get_config()
+        base_config = super(RelationLayer, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
 # esto solo aporta claridad a los diagramas de las redes ya que todo queda encapsulado
 # como una clase de keras y se ve como un nodo en el grafo, no es m\'as que dos capas
 # densas consecutivas
-class Entitie(Layer):
+class EntityLayer(Layer):
     @legacy_entitie_support
     def __init__(self, units, **kwargs):
         if 'input_shape' not in kwargs and 'input_dim' in kwargs:
             kwargs['input_shape'] = (kwargs.pop('input_dim'),)
-        super(Entitie, self).__init__(**kwargs)
+        super(EntityLayer, self).__init__(**kwargs)
         self.input_spec = InputSpec(min_ndim=2)
         self.units = units
         self.supports_masking = True
@@ -255,5 +255,16 @@ class Entitie(Layer):
         config = {
             'units': self.units
         }
-        base_config = super(Entitie, self).get_config()
+        base_config = super(EntityLayer, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
+
+class Graph:
+    def __init__(self, model):
+        self.model = model
+
+    def _repr_svg_(self):
+        return model_to_dot(self.model).create_svg().decode('utf8')
+
+def draw(model):
+    return Graph(model)

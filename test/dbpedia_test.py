@@ -14,8 +14,8 @@ except:
 
 sys.path.insert(0, os.path.join(MODULE, '..'))
 
-from src import dbpediaSNN, dbpediaIF, Relation, Entitie, tnorm_loss
-from src import dbpedia
+from snn import dbpediaSNN, dbpediaIF, Relation, Entitie, tnorm_loss
+from snn import dbpedia
 
 sys.path.pop(0)
 

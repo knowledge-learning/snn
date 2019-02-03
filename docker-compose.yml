@@ -5,6 +5,7 @@ services:
     image: matcomuh/ml:cpu
     volumes:
       - ./:/ml
+      - ./snn:/usr/lib/python3/dist-packages/snn
     ports:
       - '8888:8888'
     container_name: ml

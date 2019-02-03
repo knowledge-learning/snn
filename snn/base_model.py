@@ -5,15 +5,21 @@ from typing import List, Tuple, Dict
 #     from .utils import tnorm, tnorm_output_shape, isLayer, isModel
 # except ImportError:
 #     from utils import tnorm, tnorm_output_shape, isLayer, isModel
-from utils import tnorm, tnorm_output_shape, isLayer, isModel
+from .utils import tnorm, tnorm_output_shape, isLayer, isModel, tnorm_loss, bin_acc
+from .utils import Entitie as EntityLayer
+from .utils import Relation as RelationLayer
+from .base import Entity, Relation
 
+from keras.models import Model
 from keras.layers import Lambda, Maximum, Dense, Concatenate
 
 
-class SNN(metaclass=abc.ABCMeta):
+Entities = List[Entity]
+Relations = List[Relation]
 
-    def __init__(self, entities: List[str],
-                 relations: Dict[str, List[Tuple[str]]], isar: List[Tuple[str]]):
+
+class SNN(metaclass=abc.ABCMeta):
+    def __init__(self, entities: Entities, relations:Relations):
         """ redes semanticas
         entities: lista de strings
         relations: diccionario de: llave relacion, valor lista de tuplas de
@@ -24,6 +30,10 @@ class SNN(metaclass=abc.ABCMeta):
         isar: lista de tuplas de pares de entidades relacionadas por relaciones
         parecidas a "is a" de la forma (hijo, padre)
         """
+        isar = [(e.name, p.name) for e in entities for p in e.parents]
+        entities = [e.name for e in entities]
+        relations = {r.label: [(r.src.name, r.dst.name)] for r in relations}
+
         eet = set(entities)
         # check for duplicate entities
         assert len(eet) == len(entities), "Exist duplicated entities"
@@ -154,7 +164,7 @@ class SNN(metaclass=abc.ABCMeta):
                 rels[rel+str(n)] = self.relation_capsule(
                     rel+'_'+str(n), [ents[e1], ents[e2]])
 
-    def __call__(self, inputt, train=False, compilee=False):
+    def __call__(self, inputt, train=False, compiled=False):
         self._build_model(inputt)
         ents = self.ents
         rels = self.rels
@@ -167,12 +177,12 @@ class SNN(metaclass=abc.ABCMeta):
                 out.append(Lambda(tnorm,
                                   output_shape=tnorm_output_shape, name=i+'-out')(rels[i]))
             outt = Concatenate(name='out_embeding')(out)
-            if compilee:
+            if compiled:
                 return self.wrap_compile(inputt, outt)
             return outt
         outt = Concatenate(name='out_embeding')([ents[i] for i in self.entities] +
                                                 [rels[j] for j in sorted(rels.keys())])
-        if compilee:
+        if compiled:
             return self.wrap_compile(inputt, outt)
         return outt
 
@@ -183,33 +193,32 @@ class SNN(metaclass=abc.ABCMeta):
     def wrap_compile(self, inn, outt):
         return self._compile(inn, outt)
 
-    @abc.abstractmethod
     def _compile(self, inn, outt):
-        raise NotImplementedError()
+        model = Model(inputs=inn, outputs=outt)
+        model.compile(optimizer='RMSprop',
+                        loss=tnorm_loss, metrics=[bin_acc])
+        return model
 
-    @abc.abstractmethod
     def entitie_capsule(self, name: str, inputt):
         """
         name:  name of the entitie
         imput: is a keras symbolic tensor or input layer or a class that
         implement keras.Layer interface
         """
-        raise NotImplementedError()
+        return EntityLayer(32, name=name)(inputt)
 
-    @abc.abstractmethod
     def relation_capsule(self, name: str, inputs: List):
         """
         name:  name of the entitie
         imputs: is a list of keras symbolic tensors or input layers or a
         classes that implement keras.Layer interface
         """
-        raise NotImplementedError()
+        return RelationLayer(32, name=name)(inputs)
 
-    @abc.abstractmethod
     def isa_capsule(self, name: str, inputt):
         """
         name:  name of the entitie
         imput: is a keras symbolic tensor or input layer or a class that
         implement keras.Layer interface
         """
-        raise NotImplementedError()
+        return Dense(32, name=name)(inputt)
