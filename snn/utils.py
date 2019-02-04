@@ -266,5 +266,6 @@ class Graph:
     def _repr_svg_(self):
         return model_to_dot(self.model).create_svg().decode('utf8')
 
+
 def draw(model):
     return Graph(model)

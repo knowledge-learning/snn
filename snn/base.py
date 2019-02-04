@@ -19,8 +19,10 @@ class SNN:
         self.outputs_, self.indicators_, self.representations_ = self._build_outputs()
         return self.representations_
 
-    def build(self):
-        return Model(inputs=self.input_, outputs=self.indicators_)
+    def build(self, optimizer='rmsprop'):
+        model = Model(inputs=self.input_, outputs=self.indicators_)
+        model.compile(optimizer=optimizer, loss='binary_crossentropy')
+        return model
 
     def _build_entities(self, x):
         entity_capsules = {}
@@ -32,12 +34,7 @@ class SNN:
 
     def _build_entity_capsule(self, x, entity, capsules):
         children = [capsules[c] for c in entity.children]
-
-        if children:
-            inputs = maximum(children, name="Max-%s" % entity.name)
-        else:
-            inputs = x
-
+        inputs = maximum(children, name="max-%s" % entity.name) if len(children) > 1 else x
         return EntityLayer(self.entity_shape, name=entity.name)(inputs)
 
     def _build_relations(self):
@@ -51,7 +48,6 @@ class SNN:
     def _build_relation_capsule(self, relation):
         src = self.entity_capsules_[relation.src]
         dst = self.entity_capsules_[relation.dst]
-
         return RelationLayer(self.relation_shape, name=relation.label)([src, dst])
 
     def _build_outputs(self):
@@ -60,12 +56,12 @@ class SNN:
         outputs_concat = []
 
         for e in self.entities:
-            outputs[e] = Dense(units=1, activation='sigmoid', name="Indicator-%s" % e.name)(self.entity_capsules_[e])
+            outputs[e] = Dense(units=1, activation='sigmoid', name="indicator-%s" % e.name)(self.entity_capsules_[e])
             outputs_indicators.append(outputs[e])
             outputs_concat.append(self.entity_capsules_[e])
 
         for r in self.relations:
-            outputs[r] = Dense(units=1, activation='sigmoid', name="Indicator-%s" % r.label)(self.relation_capsules_[r])
+            outputs[r] = Dense(units=1, activation='sigmoid', name="indicator-%s" % r.label)(self.relation_capsules_[r])
             outputs_indicators.append(outputs[r])
             outputs_concat.append(self.relation_capsules_[r])
 
@@ -73,6 +69,18 @@ class SNN:
         concat = concatenate(outputs_concat, name="Representations")
 
         return outputs, indicators, concat
+
+    def map(self, x=None, classes=None, relations=None, generator=None, batch_size=None):
+        if generator is not None:
+            return self._map_generator(generator, batch_size)
+        else:
+            return self._map_values(x, classes, relations)
+
+    def _map_values(self, x, classes, relations):
+        pass
+
+    def _map_generator(self, generator, batch_size):
+        pass
 
 
 def toposort(entities):
@@ -106,6 +114,7 @@ class Entity:
 
     def __repr__(self):
         return "<%s>" % self.name
+
 
 class Relation:
     def __init__(self, label, src:Entity, dst:Entity):
