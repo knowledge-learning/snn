@@ -1,10 +1,14 @@
+from typing import Union, List
 import numpy as np
-
 from keras.models import Model
 from keras.layers import Input, Dense, maximum, concatenate
+from .layers import EntityLayer, RelationLayer
+from .layers import EntityEmbeding
+from .backend_keras import make_sparse
+from scipy.sparse import csr_matrix
+from keras.backend import dot
+from keras.backend import floatx
 from keras.utils.vis_utils import model_to_dot
-
-from .utils import EntityLayer, RelationLayer
 
 
 class SNN:
@@ -65,7 +69,7 @@ class SNN:
         de conocimiento. Devuelve el modelo ya compilado.
         """
         model = Model(inputs=x, outputs=self.indicators_)
-        model.compile(optimizer=optimizer, loss='binary_crossentropy')
+        model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['acc'])
         return model
 
     def _build_entities(self, x):
@@ -200,3 +204,35 @@ class Relation:
 
     def __repr__(self):
         return "%s(%s , %s)" % (self.label, self.src, self.dst)
+
+
+def build_embeding(cv, ents_instances: List[str], dtype: str=floatx()):
+    assert hasattr(cv, 'vocabulary_')
+    row = []
+    col = []
+    data = []
+    vocab = cv.vocabulary_
+    for n, i in enumerate(ents_instances):
+        d = i.split(' ')
+        tt = []
+        for term in d:
+            try:
+                row.append(vocab[term.lower()])
+                col.append(n)
+                tt.append(1)
+            except KeyError:
+                pass
+        tt = np.asarray(tt)
+        tt = tt/tt.sum()
+        data.extend(tt.tolist())
+    row = np.asarray(row, dtype=dtype)
+    col = np.asarray(col, dtype=dtype)
+    data = np.asarray(data, dtype=dtype)
+    mt = csr_matrix((data, (row, col)), shape=(len(vocab), len(ents_instances)), dtype=dtype)
+    mt = make_sparse(mt)
+
+    inp = Input(shape=(mt.data.shape[0],), sparse=True, dtype=dtype)
+    emb = EntityEmbeding(mt)(inp)
+
+    return inp, emb
+
