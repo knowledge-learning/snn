@@ -12,7 +12,7 @@ from keras.engine.training_utils import check_num_samples
 from keras.engine.training_utils import make_batches
 from .backend_keras import is_keras_tensor
 import numpy as np
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import csr_matrix, lil_matrix, issparse, vstack
 
 
 # contante de normalizaci\'on dela funci\'on de p\'erdida
@@ -88,7 +88,6 @@ def predict_loop(model, f, ins, batch_size=32, verbose=0, steps=None):
             indices_for_conversion_to_dense.append(i)
         elif issparse(ins[i]) and K.is_sparse(model._feed_inputs[i]):
             is_sparse = True
-
     if steps is not None:
         # Step-based predictions.
         # Since we do not know how many samples
@@ -107,6 +106,11 @@ def predict_loop(model, f, ins, batch_size=32, verbose=0, steps=None):
                 unconcatenated_outs[i].append(batch_out)
             if verbose == 1:
                 progbar.update(step + 1)
+        if is_sparse:
+            if len(unconcatenated_outs) == 1:
+                return vstack(unconcatenated_outs[0],'csr')
+            return [vstack(unconcatenated_outs[i],'csr')
+                    for i in range(len(unconcatenated_outs))]
         if len(unconcatenated_outs) == 1:
             return np.concatenate(unconcatenated_outs[0], axis=0)
         return [np.concatenate(unconcatenated_outs[i], axis=0)
@@ -133,13 +137,15 @@ def predict_loop(model, f, ins, batch_size=32, verbose=0, steps=None):
                 for batch_out in batch_outs:
                     shape = (num_samples,) + batch_out.shape[1:]
                     if is_sparse:
-                        outs.append(csr_matrix(shape, dtype=batch_out.dtype))
+                        outs.append(lil_matrix(shape, dtype=batch_out.dtype))
                     else:
                         outs.append(np.zeros(shape, dtype=batch_out.dtype))
             for i, batch_out in enumerate(batch_outs):
                 outs[i][batch_start:batch_end] = batch_out
             if verbose == 1:
                 progbar.update(batch_end)
+        if is_sparse:
+            return unpack_singleton(list(map(lambda oo: oo.tocsr(), outs)))
         return unpack_singleton(outs)
 
 

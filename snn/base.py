@@ -1,15 +1,17 @@
-from typing import Union, List
+from typing import Union, List, Tuple
 import numpy as np
-from keras.models import Model
 from keras.layers import Input, Dense, maximum, concatenate
+from keras.models import Model as kModel
+from .layers import Model
 from .layers import EntityLayer, RelationLayer
 from .layers import EntityEmbeding
-from .backend_keras import make_sparse
+from .backend_keras import make_sparse, sparse_mean_squared_error
 from scipy.sparse import csr_matrix
 from keras.backend import dot
 from keras.backend import floatx
 from keras.utils.vis_utils import model_to_dot
 
+from sklearn.feature_extraction.text import CountVectorizer
 
 class SNN:
     """Representa una SNN.
@@ -68,7 +70,7 @@ class SNN:
         """Construye y compila un modelo que permite entrenar la SNN en una base
         de conocimiento. Devuelve el modelo ya compilado.
         """
-        model = Model(inputs=x, outputs=self.indicators_)
+        model = kModel(inputs=x, outputs=self.indicators_)
         model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['acc'])
         return model
 
@@ -154,6 +156,12 @@ class SNN:
 
         return np.asarray(y)
 
+    @staticmethod
+    def build_embeding(cv, ents_instances: List[str],
+                   dtype: str=floatx(),
+                   check: bool=True)->Union[Model,Tuple[Input, EntityEmbeding]]:
+        return build_embeding(cv, ents_instances, dtype, check)
+
 
 def toposort(entities):
     """Devuelve el orden topológico de las entidades, en el orden
@@ -206,12 +214,22 @@ class Relation:
         return "%s(%s , %s)" % (self.label, self.src, self.dst)
 
 
-def build_embeding(cv, ents_instances: List[str], dtype: str=floatx()):
-    assert hasattr(cv, 'vocabulary_')
+def build_embeding(cv, ents_instances: List[str],
+                   dtype: str=floatx(),
+                   check: bool=True,
+                   model: bool=True)->Union[Model,Tuple[Input, EntityEmbeding]]:
+    if check:
+        assert (hasattr(cv, 'vocabulary_') and  isinstance(cv.vocabulary_) and \
+                all(map(lambda x,y: isinstance(x, str) and isinstance(y, int), cv.vocabulary_.items()))) or\
+               (isinstance(cv, dict) and \
+               all(map(lambda x,y: isinstance(x, str) and isinstance(y, int), cv.items())))
     row = []
     col = []
     data = []
-    vocab = cv.vocabulary_
+    if hasattr(cv, 'vocabulary_'):
+        vocab = cv.vocabulary_
+    else:
+        vocab = cv
     for n, i in enumerate(ents_instances):
         d = i.split(' ')
         tt = []
@@ -233,6 +251,9 @@ def build_embeding(cv, ents_instances: List[str], dtype: str=floatx()):
 
     inp = Input(shape=(mt.data.shape[0],), sparse=True, dtype=dtype)
     emb = EntityEmbeding(mt)(inp)
-
+    if model:
+        mod = Model(inputs=inp, outputs=emb)
+        mod.compile('rmsprop', loss=sparse_mean_squared_error)
+        return mod
     return inp, emb
 
