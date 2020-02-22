@@ -38,3 +38,33 @@ The datasets used in the experimentation are **not** distributed in this reposit
 > LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 > SOFTWARE.
+
+
+## How to cite
+
+Please cite this work with the following this BibTeX:
+```
+@inproceedings{DBLP:conf/ranlp/Piad-MorffisMGA19,
+  author    = {Alejandro Piad{-}Morffis and
+               Rafael Mu{\~{n}}oz and
+               Yoan Guti{\'{e}}rrez and
+               Yudivi{\'{a}}n Almeida{-}Cruz and
+               Suilan Estevez{-}Velarde and
+               Andr{\'{e}}s Montoyo},
+  editor    = {Ruslan Mitkov and
+               Galia Angelova},
+  title     = {A Neural Network Component for Knowledge-Based Semantic Representations
+               of Text},
+  booktitle = {Proceedings of the International Conference on Recent Advances in
+               Natural Language Processing, {RANLP} 2019, Varna, Bulgaria, September
+               2-4, 2019},
+  pages     = {904--911},
+  publisher = {{INCOMA} Ltd.},
+  year      = {2019},
+  url       = {https://doi.org/10.26615/978-954-452-056-4\_105},
+  doi       = {10.26615/978-954-452-056-4\_105},
+  timestamp = {Fri, 31 Jan 2020 12:36:51 +0100},
+  biburl    = {https://dblp.org/rec/conf/ranlp/Piad-MorffisMGA19.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+```
